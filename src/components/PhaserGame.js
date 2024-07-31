@@ -13,6 +13,7 @@ const PhaserGame = () => {
     let score = 0;
     const coinTiles = new Set();
     let bg1, bg2; // Variables for the background images
+    let bgm;
 
     useEffect(() => {
         const preloadAssets = (scene) => {
@@ -23,6 +24,7 @@ const PhaserGame = () => {
             scene.load.atlas('luffy_idle', 'assets/luffy_idle.png', 'assets/luffy_idle.json');
             scene.load.atlas('luffy_jump', 'assets/luffy_jump.png', 'assets/luffy_jump.json');
             scene.load.atlas('luffy_run', 'assets/luffy_run.png', 'assets/luffy_run.json');
+            scene.load.audio('bgm', 'assets/binks-sake-org.mp3');
         };
 
         const createAnimations = (scene) => {
@@ -75,6 +77,7 @@ const PhaserGame = () => {
                     preloadAssets(this);
                 },
                 create: function () {
+                    bgm = this.sound.add("bgm");
                     // Add two background images for the infinite effect
                     bg1 = this.add.image(0, 0, 'background').setOrigin(0, 0);
                     bg2 = this.add.image(bg1.width, 0, 'background').setOrigin(0, 0); // Position the second background next to the first
@@ -137,6 +140,9 @@ const PhaserGame = () => {
                     scoreText.setScrollFactor(0);
 
                     createAnimations(this);
+
+                    bgm = this.sound.add('bgm');
+                    bgm.play({ loop: true });
                 },
                 update: function () {
                     // Update background positions based on player's position
