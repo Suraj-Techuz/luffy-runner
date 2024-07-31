@@ -18,4 +18,31 @@
     margin: 0 auto;
     background: #f0f0f0;
   }
+  /* style.css */
+html, body {
+    margin: 0; /* Remove default margins */
+    height: 100%; /* Full height */
+    display: flex; /* Flexbox layout */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    background-color: #282c34; /* Dark background for contrast */
+    font-family: Arial, sans-serif; /* Optional font style */
+  }
+  
+  .App {
+    display: flex; /* Use flexbox to center content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    width: 100%; /* Set a max width for the app */
+    max-width: 1200px; /* Optional max width */
+    background-color: #fff; /* White background for the app */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    overflow: hidden; /* Prevent overflow */
+  }
+  
+  .PhaserGame {
+    width: 1200px; /* Set width for PhaserGame */
+    height: 800px; /* Set height for PhaserGame */
+  }
   

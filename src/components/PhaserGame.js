@@ -9,15 +9,17 @@ const sizes = {
 
 const PhaserGame = () => {
     const gameRef = useRef(null);
-    let map, player, cursors, groundLayer, coinLayer, text;
+    let map, player, cursors, groundLayer, coinLayer, scoreText, titleText, instructionsText;
     let score = 0;
-    const coinTiles = new Set(); // Define coinTiles as a Set to store coin tile references
-    
+    const coinTiles = new Set();
+    let bg1, bg2; // Variables for the background images
+
     useEffect(() => {
         const preloadAssets = (scene) => {
             scene.load.tilemapTiledJSON('map', 'assets/map.json');
             scene.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 70, frameHeight: 70 });
             scene.load.image('coin', 'assets/coinGold.png');
+            scene.load.image('background', 'assets/forest_bg.jpg'); // Load your background image
             scene.load.atlas('luffy_idle', 'assets/luffy_idle.png', 'assets/luffy_idle.json');
             scene.load.atlas('luffy_jump', 'assets/luffy_jump.png', 'assets/luffy_jump.json');
             scene.load.atlas('luffy_run', 'assets/luffy_run.png', 'assets/luffy_run.json');
@@ -39,24 +41,21 @@ const PhaserGame = () => {
             scene.anims.create({
                 key: 'jump',
                 frames: scene.anims.generateFrameNames('luffy_jump', { prefix: 'sprite_', start: 3, end: 3 }),
-                frameRate: 1, // 1 frame per second for jump animation
+                frameRate: 1,
                 repeat: -1,
             });
         };
 
         const collectCoin = (player, tile) => {
-            // Only increment the score if the coin tile is in the Set
             if (coinTiles.has(tile)) {
-                const tileRemoved = coinLayer.removeTileAt(tile.x, tile.y); // Attempt to remove the tile
-
+                const tileRemoved = coinLayer.removeTileAt(tile.x, tile.y);
                 if (tileRemoved) {
-                    score++; // Increment the score
-                    text.setText(score.toString()); // Update the score display
-                    coinTiles.delete(tile); // Remove the tile from the Set after collecting
+                    score++;
+                    scoreText.setText(`Score: ${score}`);
+                    coinTiles.delete(tile);
                 }
             }
-
-            return false; // Return false to prevent further processing
+            return false;
         };
 
         const phaserConfig = {
@@ -76,6 +75,10 @@ const PhaserGame = () => {
                     preloadAssets(this);
                 },
                 create: function () {
+                    // Add two background images for the infinite effect
+                    bg1 = this.add.image(0, 0, 'background').setOrigin(0, 0);
+                    bg2 = this.add.image(bg1.width, 0, 'background').setOrigin(0, 0); // Position the second background next to the first
+
                     map = this.make.tilemap({ key: 'map' });
                     const groundTiles = map.addTilesetImage('tiles');
                     groundLayer = map.createLayer('World', groundTiles, 0, sizes.height - 620);
@@ -91,16 +94,14 @@ const PhaserGame = () => {
                     const coinTileset = map.addTilesetImage('coin');
                     coinLayer = map.createLayer('Coins', coinTileset, 0, sizes.height - 620);
 
-                    // Store coin tile references in the Set
                     coinLayer.forEachTile(tile => {
-                        if (tile.index !== -1) { // Check if it's a valid coin tile
-                            coinTiles.add(tile); // Add the tile reference to the Set
+                        if (tile.index !== -1) {
+                            coinTiles.add(tile);
                         }
                     });
 
                     player = this.physics.add.sprite(100, sizes.height - 250, 'luffy_idle');
                     player.setScale(1.8);
-                    // player.setBounce(0.2);
                     player.setCollideWorldBounds(true);
                     this.physics.add.collider(groundLayer, player);
                     this.physics.add.overlap(player, coinLayer, collectCoin, null, this);
@@ -110,15 +111,46 @@ const PhaserGame = () => {
                     this.cameras.main.startFollow(player);
                     this.cameras.main.setBackgroundColor('#ccccff');
 
-                    text = this.add.text(20, 570, '0', {
+                    // Title text
+                    titleText = this.add.text(sizes.width / 2, 20, 'Collect the Coins!', {
+                        fontSize: '40px',
+                        fill: '#ffcc00',
+                        align: 'center',
+                        fontFamily: 'Arial'
+                    }).setOrigin(0.5, 0);
+
+                    // Instructions text
+                    instructionsText = this.add.text(sizes.width / 2, 60, 'Use arrow keys to move and jump', {
                         fontSize: '20px',
-                        fill: '#ffffff'
-                    });
-                    text.setScrollFactor(0);
+                        fill: '#ffffff',
+                        align: 'center',
+                        fontFamily: 'Arial'
+                    }).setOrigin(0.5, 0);
+
+                    // Score text
+                    scoreText = this.add.text(sizes.width - 20, 100, 'Score: 0', {
+                        fontSize: '20px',
+                        fill: '#ffffff',
+                        align: 'right',
+                        fontFamily: 'Arial'
+                    }).setOrigin(1, 0);
+                    scoreText.setScrollFactor(0);
 
                     createAnimations(this);
                 },
                 update: function () {
+                    // Update background positions based on player's position
+                    bg1.x = this.cameras.main.scrollX; // Follow the camera's x position
+                    bg2.x = bg1.x + bg1.width; // Position bg2 right after bg1
+
+                    // Check if the second background is out of bounds, reposition if necessary
+                    if (bg1.x < -bg1.width) {
+                        bg1.x = bg2.x + bg2.width;
+                    }
+                    if (bg2.x < -bg2.width) {
+                        bg2.x = bg1.x + bg1.width;
+                    }
+
                     if (cursors.left.isDown) {
                         player.body.setVelocityX(-200);
                         player.anims.play('walk', true);
@@ -130,9 +162,7 @@ const PhaserGame = () => {
                     } else {
                         player.body.setVelocityX(0);
                         player.anims.play('idle', true);
-                        if (player.body.velocity.y > 200) {
-                            player.anims.play('jump', true);
-                        } else if (player.body.velocity.y < -200) {
+                        if (player.body.velocity.y > 200 || player.body.velocity.y < -200) {
                             player.anims.play('jump', true);
                         }
                     }
