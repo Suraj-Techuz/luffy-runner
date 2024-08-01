@@ -139,6 +139,7 @@ const PhaserGame = () => {
                     }).setOrigin(1, 0);
                     scoreText.setScrollFactor(0);
 
+                    
                     createAnimations(this);
 
                     bgm = this.sound.add('bgm');
