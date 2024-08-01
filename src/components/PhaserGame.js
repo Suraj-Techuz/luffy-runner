@@ -9,18 +9,26 @@ const sizes = {
 
 const PhaserGame = () => {
     const gameRef = useRef(null);
-    let map, player, cursors, groundLayer, coinLayer, scoreText, titleText, instructionsText;
+    const mapRef = useRef(null);
+    const playerRef = useRef(null);
+    const cursorsRef = useRef(null);
+    const groundLayerRef = useRef(null);
+    const coinLayerRef = useRef(null);
+    const scoreTextRef = useRef(null);
+    const titleTextRef = useRef(null);
+    const instructionsTextRef = useRef(null);
+    const bg1Ref = useRef(null);
+    const bg2Ref = useRef(null);
+    const bgmRef = useRef(null);
     let score = 0;
     const coinTiles = new Set();
-    let bg1, bg2; // Variables for the background images
-    let bgm;
 
     useEffect(() => {
         const preloadAssets = (scene) => {
             scene.load.tilemapTiledJSON('map', 'assets/map.json');
             scene.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 70, frameHeight: 70 });
             scene.load.image('coin', 'assets/coinGold.png');
-            scene.load.image('background', 'assets/forest_bg.jpg'); // Load your background image
+            scene.load.image('background', 'assets/forest_bg.jpg');
             scene.load.atlas('luffy_idle', 'assets/luffy_idle.png', 'assets/luffy_idle.json');
             scene.load.atlas('luffy_jump', 'assets/luffy_jump.png', 'assets/luffy_jump.json');
             scene.load.atlas('luffy_run', 'assets/luffy_run.png', 'assets/luffy_run.json');
@@ -50,10 +58,10 @@ const PhaserGame = () => {
 
         const collectCoin = (player, tile) => {
             if (coinTiles.has(tile)) {
-                const tileRemoved = coinLayer.removeTileAt(tile.x, tile.y);
+                const tileRemoved = coinLayerRef.current.removeTileAt(tile.x, tile.y);
                 if (tileRemoved) {
                     score++;
-                    scoreText.setText(`Score: ${score}`);
+                    scoreTextRef.current.setText(`Score: ${score}`);
                     coinTiles.delete(tile);
                 }
             }
@@ -68,7 +76,7 @@ const PhaserGame = () => {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 500 },
-                    debug: false,
+                    debug: true,
                 },
             },
             scene: {
@@ -77,105 +85,97 @@ const PhaserGame = () => {
                     preloadAssets(this);
                 },
                 create: function () {
-                    bgm = this.sound.add("bgm");
-                    // Add two background images for the infinite effect
-                    bg1 = this.add.image(0, 0, 'background').setOrigin(0, 0);
-                    bg2 = this.add.image(bg1.width, 0, 'background').setOrigin(0, 0); // Position the second background next to the first
+                    bgmRef.current = this.sound.add('bgm');
+                    bgmRef.current.play({ loop: true });
 
-                    map = this.make.tilemap({ key: 'map' });
-                    const groundTiles = map.addTilesetImage('tiles');
-                    groundLayer = map.createLayer('World', groundTiles, 0, sizes.height - 620);
+                    bg1Ref.current = this.add.image(0, 0, 'background').setOrigin(0, 0);
+                    bg2Ref.current = this.add.image(bg1Ref.current.width, 0, 'background').setOrigin(0, 0);
 
-                    if (groundLayer) {
-                        groundLayer.setCollisionByExclusion([-1]);
-                        this.physics.world.bounds.width = groundLayer.width;
-                        this.physics.world.bounds.height = groundLayer.height;
+                    mapRef.current = this.make.tilemap({ key: 'map' });
+                    const groundTiles = mapRef.current.addTilesetImage('tiles');
+                    groundLayerRef.current = mapRef.current.createLayer('World', groundTiles, 0, sizes.height - 620);
+
+                    if (groundLayerRef.current) {
+                        groundLayerRef.current.setCollisionByExclusion([-1]);
+                        this.physics.world.bounds.width = groundLayerRef.current.width;
+                        this.physics.world.bounds.height = groundLayerRef.current.height;
                     } else {
                         console.error('Failed to create ground layer');
                     }
 
-                    const coinTileset = map.addTilesetImage('coin');
-                    coinLayer = map.createLayer('Coins', coinTileset, 0, sizes.height - 620);
+                    const coinTileset = mapRef.current.addTilesetImage('coin');
+                    coinLayerRef.current = mapRef.current.createLayer('Coins', coinTileset, 0, sizes.height - 620);
 
-                    coinLayer.forEachTile(tile => {
+                    coinLayerRef.current.forEachTile(tile => {
                         if (tile.index !== -1) {
                             coinTiles.add(tile);
                         }
                     });
 
-                    player = this.physics.add.sprite(100, sizes.height - 250, 'luffy_idle');
-                    player.setScale(1.8);
-                    player.setCollideWorldBounds(true);
-                    this.physics.add.collider(groundLayer, player);
-                    this.physics.add.overlap(player, coinLayer, collectCoin, null, this);
+                    playerRef.current = this.physics.add.sprite(100, sizes.height - 250, 'luffy_idle');
+                    playerRef.current.setScale(1.8);
+                    playerRef.current.setCollideWorldBounds(true);
+                    this.physics.add.collider(groundLayerRef.current, playerRef.current);
+                    this.physics.add.overlap(playerRef.current, coinLayerRef.current, collectCoin, null, this);
 
-                    cursors = this.input.keyboard.createCursorKeys();
-                    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-                    this.cameras.main.startFollow(player);
+                    cursorsRef.current = this.input.keyboard.createCursorKeys();
+                    this.cameras.main.setBounds(0, 0, mapRef.current.widthInPixels, mapRef.current.heightInPixels);
+                    this.cameras.main.startFollow(playerRef.current);
                     this.cameras.main.setBackgroundColor('#ccccff');
 
-                    // Title text
-                    titleText = this.add.text(sizes.width / 2, 20, 'Collect the Coins!', {
+                    titleTextRef.current = this.add.text(sizes.width / 2, 20, 'Collect the Coins!', {
                         fontSize: '40px',
                         fill: '#ffcc00',
                         align: 'center',
                         fontFamily: 'Arial'
                     }).setOrigin(0.5, 0);
 
-                    // Instructions text
-                    instructionsText = this.add.text(sizes.width / 2, 60, 'Use arrow keys to move and jump', {
+                    instructionsTextRef.current = this.add.text(sizes.width / 2, 60, 'Use arrow keys to move and jump', {
                         fontSize: '20px',
                         fill: '#ffffff',
                         align: 'center',
                         fontFamily: 'Arial'
                     }).setOrigin(0.5, 0);
 
-                    // Score text
-                    scoreText = this.add.text(sizes.width - 20, 100, 'Score: 0', {
+                    scoreTextRef.current = this.add.text(sizes.width - 20, 100, 'Score: 0', {
                         fontSize: '20px',
                         fill: '#ffffff',
                         align: 'right',
                         fontFamily: 'Arial'
                     }).setOrigin(1, 0);
-                    scoreText.setScrollFactor(0);
+                    scoreTextRef.current.setScrollFactor(0);
 
-                    
                     createAnimations(this);
-
-                    bgm = this.sound.add('bgm');
-                    bgm.play({ loop: true });
                 },
                 update: function () {
-                    // Update background positions based on player's position
-                    bg1.x = this.cameras.main.scrollX; // Follow the camera's x position
-                    bg2.x = bg1.x + bg1.width; // Position bg2 right after bg1
+                    bg1Ref.current.x = this.cameras.main.scrollX;
+                    bg2Ref.current.x = bg1Ref.current.x + bg1Ref.current.width;
 
-                    // Check if the second background is out of bounds, reposition if necessary
-                    if (bg1.x < -bg1.width) {
-                        bg1.x = bg2.x + bg2.width;
+                    if (bg1Ref.current.x < -bg1Ref.current.width) {
+                        bg1Ref.current.x = bg2Ref.current.x + bg2Ref.current.width;
                     }
-                    if (bg2.x < -bg2.width) {
-                        bg2.x = bg1.x + bg1.width;
+                    if (bg2Ref.current.x < -bg2Ref.current.width) {
+                        bg2Ref.current.x = bg1Ref.current.x + bg1Ref.current.width;
                     }
 
-                    if (cursors.left.isDown) {
-                        player.body.setVelocityX(-200);
-                        player.anims.play('walk', true);
-                        player.flipX = true;
-                    } else if (cursors.right.isDown) {
-                        player.body.setVelocityX(200);
-                        player.anims.play('walk', true);
-                        player.flipX = false;
+                    if (cursorsRef.current.left.isDown) {
+                        playerRef.current.body.setVelocityX(-200);
+                        playerRef.current.anims.play('walk', true);
+                        playerRef.current.flipX = true;
+                    } else if (cursorsRef.current.right.isDown) {
+                        playerRef.current.body.setVelocityX(200);
+                        playerRef.current.anims.play('walk', true);
+                        playerRef.current.flipX = false;
                     } else {
-                        player.body.setVelocityX(0);
-                        player.anims.play('idle', true);
-                        if (player.body.velocity.y > 200 || player.body.velocity.y < -200) {
-                            player.anims.play('jump', true);
+                        playerRef.current.body.setVelocityX(0);
+                        playerRef.current.anims.play('idle', true);
+                        if (playerRef.current.body.velocity.y > 200 || playerRef.current.body.velocity.y < -200) {
+                            playerRef.current.anims.play('jump', true);
                         }
                     }
-                    if (cursors.space.isDown || cursors.up.isDown) {
-                        player.body.setVelocityY(-400);
-                        player.anims.play('jump', true);
+                    if (cursorsRef.current.space.isDown || cursorsRef.current.up.isDown) {
+                        playerRef.current.body.setVelocityY(-400);
+                        playerRef.current.anims.play('jump', true);
                     }
                 },
             },
