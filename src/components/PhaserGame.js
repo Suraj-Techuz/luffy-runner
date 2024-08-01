@@ -6,6 +6,9 @@ const sizes = {
     height: 800,
 };
 
+const playerSpeed = 400;
+const playerJumpValocity = 500;
+
 const PhaserGame = () => {
     const gameRef = useRef(null);
     const mapRef = useRef(null);
@@ -32,7 +35,7 @@ const PhaserGame = () => {
             scene.load.atlas('luffy_idle', 'assets/luffy_idle.png', 'assets/luffy_idle.json');
             scene.load.atlas('luffy_jump', 'assets/luffy_jump.png', 'assets/luffy_jump.json');
             scene.load.atlas('luffy_run', 'assets/luffy_run.png', 'assets/luffy_run.json');
-            scene.load.audio('bgm', 'assets/binks-sake-org.mp3');
+            scene.load.audio('bgm', 'assets/binks_sake_2.mp3');
         };
 
         const createAnimations = (scene) => {
@@ -100,7 +103,7 @@ const PhaserGame = () => {
                     } else {
                         console.error('Failed to create ground layer');
                     }
-
+                    this.physics.world.setBounds(0, 0, Infinity, sizes.height);
                     const coinTileset = mapRef.current.addTilesetImage('coin');
                     coinLayerRef.current = mapRef.current.createLayer('Coins', coinTileset, 0, sizes.height - 620);
 
@@ -109,7 +112,6 @@ const PhaserGame = () => {
                             coinTiles.add(tile);
                         }
                     });
-
                     playerRef.current = this.physics.add.sprite(100, sizes.height - 250, 'luffy_idle');
                     playerRef.current.setScale(1.8);
                     playerRef.current.setCollideWorldBounds(true);
@@ -120,8 +122,8 @@ const PhaserGame = () => {
                     const keys = this.input.keyboard.addKeys('W,A,D');
                     cursorsRef.current.w = keys.W;
                     cursorsRef.current.a = keys.A;
-                    cursorsRef.current.d = keys.D;                    
-                    this.cameras.main.setBounds(0, 0, mapRef.current.widthInPixels, mapRef.current.heightInPixels);
+                    cursorsRef.current.d = keys.D;
+                    this.cameras.main.setBounds(0, 0, Infinity, mapRef.current.heightInPixels);
                     this.cameras.main.startFollow(playerRef.current);
                     this.cameras.main.setBackgroundColor('#ccccff');
 
@@ -156,26 +158,35 @@ const PhaserGame = () => {
                     bg1Ref.current.x = this.cameras.main.scrollX;
                     bg2Ref.current.x = bg1Ref.current.x + bg1Ref.current.width;
 
+                    // Move the player left and right
                     if (cursorsRef.current.left.isDown || cursorsRef.current.a.isDown) {
-                        playerRef.current.body.setVelocityX(-200);
+                        playerRef.current.body.setVelocityX(-playerSpeed);
                         playerRef.current.anims.play('walk', true);
                         playerRef.current.flipX = true;
                     } else if (cursorsRef.current.right.isDown || cursorsRef.current.d.isDown) {
-                        playerRef.current.body.setVelocityX(200);
+                        playerRef.current.body.setVelocityX(playerSpeed);
                         playerRef.current.anims.play('walk', true);
                         playerRef.current.flipX = false;
                     } else {
                         playerRef.current.body.setVelocityX(0);
                         playerRef.current.anims.play('idle', true);
-                        if (playerRef.current.body.velocity.y > 200 || playerRef.current.body.velocity.y < -200) {
+                    }
+
+                    // Handle jumping logic
+                    if (cursorsRef.current.space.isDown || cursorsRef.current.up.isDown || cursorsRef.current.w.isDown) {
+                        // Check if the player is on the ground before allowing a jump
+                        if (playerRef.current.body.onFloor()) {
+                            playerRef.current.body.setVelocityY(-playerJumpValocity);
                             playerRef.current.anims.play('jump', true);
                         }
                     }
-                    if (cursorsRef.current.space.isDown || cursorsRef.current.up.isDown || cursorsRef.current.w.isDown) {
-                        playerRef.current.body.setVelocityY(-400);
+
+                    // Change the animation based on vertical velocity for jump state
+                    if (playerRef.current.body.velocity.y < -150) {
+                        playerRef.current.anims.play('jump', true);
+                    } else if (playerRef.current.body.velocity.y > 150 && !playerRef.current.body.onFloor()) {
                         playerRef.current.anims.play('jump', true);
                     }
-                    
 
                 },
             },
