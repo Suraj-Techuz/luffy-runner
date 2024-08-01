@@ -117,6 +117,10 @@ const PhaserGame = () => {
                     this.physics.add.overlap(playerRef.current, coinLayerRef.current, collectCoin, null, this);
 
                     cursorsRef.current = this.input.keyboard.createCursorKeys();
+                    const keys = this.input.keyboard.addKeys('W,A,D');
+                    cursorsRef.current.w = keys.W;
+                    cursorsRef.current.a = keys.A;
+                    cursorsRef.current.d = keys.D;                    
                     this.cameras.main.setBounds(0, 0, mapRef.current.widthInPixels, mapRef.current.heightInPixels);
                     this.cameras.main.startFollow(playerRef.current);
                     this.cameras.main.setBackgroundColor('#ccccff');
@@ -152,18 +156,11 @@ const PhaserGame = () => {
                     bg1Ref.current.x = this.cameras.main.scrollX;
                     bg2Ref.current.x = bg1Ref.current.x + bg1Ref.current.width;
 
-                    if (bg1Ref.current.x < -bg1Ref.current.width) {
-                        bg1Ref.current.x = bg2Ref.current.x + bg2Ref.current.width;
-                    }
-                    if (bg2Ref.current.x < -bg2Ref.current.width) {
-                        bg2Ref.current.x = bg1Ref.current.x + bg1Ref.current.width;
-                    }
-
-                    if (cursorsRef.current.left.isDown) {
+                    if (cursorsRef.current.left.isDown || cursorsRef.current.a.isDown) {
                         playerRef.current.body.setVelocityX(-200);
                         playerRef.current.anims.play('walk', true);
                         playerRef.current.flipX = true;
-                    } else if (cursorsRef.current.right.isDown) {
+                    } else if (cursorsRef.current.right.isDown || cursorsRef.current.d.isDown) {
                         playerRef.current.body.setVelocityX(200);
                         playerRef.current.anims.play('walk', true);
                         playerRef.current.flipX = false;
@@ -174,10 +171,12 @@ const PhaserGame = () => {
                             playerRef.current.anims.play('jump', true);
                         }
                     }
-                    if (cursorsRef.current.space.isDown || cursorsRef.current.up.isDown) {
+                    if (cursorsRef.current.space.isDown || cursorsRef.current.up.isDown || cursorsRef.current.w.isDown) {
                         playerRef.current.body.setVelocityY(-400);
                         playerRef.current.anims.play('jump', true);
                     }
+                    
+
                 },
             },
             parent: 'gameCanvasContainer',
