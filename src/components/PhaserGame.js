@@ -1,5 +1,4 @@
-// src/components/PhaserGame.js
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import Phaser from 'phaser';
 
 const sizes = {
@@ -20,15 +19,16 @@ const PhaserGame = () => {
     const bg1Ref = useRef(null);
     const bg2Ref = useRef(null);
     const bgmRef = useRef(null);
-    let score = 0;
-    const coinTiles = new Set();
+    const score = useRef(0);
+
+    const coinTiles = useMemo(() => new Set(), []);  // Ensure coinTiles is only created once
 
     useEffect(() => {
         const preloadAssets = (scene) => {
             scene.load.tilemapTiledJSON('map', 'assets/map.json');
             scene.load.spritesheet('tiles', 'assets/tiles.png', { frameWidth: 70, frameHeight: 70 });
             scene.load.image('coin', 'assets/coinGold.png');
-            scene.load.image('background', 'assets/forest_bg.jpg');
+            scene.load.image('background', 'assets/forest_bg.jpg'); // Load your background image
             scene.load.atlas('luffy_idle', 'assets/luffy_idle.png', 'assets/luffy_idle.json');
             scene.load.atlas('luffy_jump', 'assets/luffy_jump.png', 'assets/luffy_jump.json');
             scene.load.atlas('luffy_run', 'assets/luffy_run.png', 'assets/luffy_run.json');
@@ -60,8 +60,8 @@ const PhaserGame = () => {
             if (coinTiles.has(tile)) {
                 const tileRemoved = coinLayerRef.current.removeTileAt(tile.x, tile.y);
                 if (tileRemoved) {
-                    score++;
-                    scoreTextRef.current.setText(`Score: ${score}`);
+                    score.current++;
+                    scoreTextRef.current.setText(`Score: ${score.current}`);
                     coinTiles.delete(tile);
                 }
             }
@@ -76,7 +76,7 @@ const PhaserGame = () => {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 500 },
-                    debug: true,
+                    debug: false,
                 },
             },
             scene: {
@@ -85,9 +85,7 @@ const PhaserGame = () => {
                     preloadAssets(this);
                 },
                 create: function () {
-                    bgmRef.current = this.sound.add('bgm');
-                    bgmRef.current.play({ loop: true });
-
+                    bgmRef.current = this.sound.add("bgm");
                     bg1Ref.current = this.add.image(0, 0, 'background').setOrigin(0, 0);
                     bg2Ref.current = this.add.image(bg1Ref.current.width, 0, 'background').setOrigin(0, 0);
 
@@ -146,6 +144,9 @@ const PhaserGame = () => {
                     scoreTextRef.current.setScrollFactor(0);
 
                     createAnimations(this);
+
+                    bgmRef.current = this.sound.add('bgm');
+                    bgmRef.current.play({ loop: true });
                 },
                 update: function () {
                     bg1Ref.current.x = this.cameras.main.scrollX;
@@ -193,7 +194,7 @@ const PhaserGame = () => {
                 gameRef.current.destroy(true);
             }
         };
-    }, []);
+    }, [coinTiles]);
 
     return (
         <div id="gameCanvasContainer" style={{ width: sizes.width, height: sizes.height }}>
